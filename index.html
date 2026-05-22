@@ -960,6 +960,8 @@
     return soundcloudWidget;
   }
   window.addEventListener('load', initSoundCloud);
+  // also try as soon as the SC API arrives, so the widget is ready before the first tap
+  (function waitForSC(){ if(window.SC){ initSoundCloud(); } else { setTimeout(waitForSC, 200); } })();
 
   function playSound(reveal=false){
     if(reveal) show('music');
@@ -1085,20 +1087,30 @@
     volumeKnob.classList.remove('is-dragging');
     document.getElementById('lcd3').innerHTML='VOLUME SET <span class="caret"></span>';
   }
+  volumeSlider.style.touchAction='none';
+  let volumePointerId=null;
   volumeSlider.addEventListener('pointerdown', e=>{
     e.preventDefault();
     volumeDragging=true;
+    volumePointerId=e.pointerId;
     volumeKnob.classList.add('is-dragging');
-    if(volumeSlider.setPointerCapture) volumeSlider.setPointerCapture(e.pointerId);
+    if(volumeSlider.setPointerCapture){ try{ volumeSlider.setPointerCapture(e.pointerId); }catch(_){} }
     updateVolumeFromEvent(e);
   });
-  document.addEventListener('pointermove', e=>{
-    if(!volumeDragging) return;
+  volumeSlider.addEventListener('pointermove', e=>{
+    if(!volumeDragging || (volumePointerId!==null && e.pointerId!==volumePointerId)) return;
     e.preventDefault();
     updateVolumeFromEvent(e);
   }, {passive:false});
-  document.addEventListener('pointerup', finishVolumeDrag);
-  document.addEventListener('pointercancel', finishVolumeDrag);
+  document.addEventListener('pointermove', e=>{
+    if(!volumeDragging || (volumePointerId!==null && e.pointerId!==volumePointerId)) return;
+    e.preventDefault();
+    updateVolumeFromEvent(e);
+  }, {passive:false});
+  function endVolume(e){ if(e && volumePointerId!==null && e.pointerId!==volumePointerId) return; volumePointerId=null; finishVolumeDrag(); }
+  volumeSlider.addEventListener('pointerup', endVolume);
+  document.addEventListener('pointerup', endVolume);
+  document.addEventListener('pointercancel', endVolume);
 
   const jog=document.getElementById('jog');
   let jogR=0;

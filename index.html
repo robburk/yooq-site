@@ -561,11 +561,11 @@
     .knobs{gap:10px}
     .socials{margin-top:0}
     .sound-console{grid-template-columns:1fr}
-    .pads{grid-template-columns:repeat(2,1fr)}
-    .pad{min-height:98px;padding:12px 11px 10px}
-    .pad .date{font-size:14.5px}
-    .pad .city{font-size:10px}
-    .pad .venue{font-size:9px}
+    .pads{grid-template-columns:repeat(3,1fr)}
+    .pad{min-height:96px;padding:11px 10px 9px}
+    .pad .date{font-size:13.5px}
+    .pad .city{font-size:9.5px}
+    .pad .venue{font-size:8.5px}
     .footbar{align-items:flex-start}
     .footbar nav{gap:11px}
   }
@@ -584,9 +584,13 @@
     .knobs{grid-template-columns:repeat(4,1fr);gap:6px}
     .knob-label{font-size:7.5px;letter-spacing:1.4px}
     .knob-value{font-size:7px}
-    .pads{grid-template-columns:repeat(2,1fr);gap:9px}
-    .pad{min-height:92px;border-radius:9px}
-    .pad .go{font-size:8px;letter-spacing:1.1px}
+    .pads{grid-template-columns:repeat(3,1fr);gap:7px}
+    .pad{min-height:86px;border-radius:8px;padding:10px 8px 8px}
+    .pad .strip{left:5px;right:5px;height:5px}
+    .pad .date{font-size:12px;margin-top:6px}
+    .pad .city{font-size:8.5px;letter-spacing:.2px;margin-top:5px}
+    .pad .venue{font-size:7.5px;letter-spacing:.2px;line-height:1.25}
+    .pad .go{font-size:7.5px;letter-spacing:.8px;padding-top:7px}
     .tour-pager{grid-template-columns:1fr 1fr;gap:8px}
     .bank-readout{grid-column:1 / -1;grid-row:1;min-width:0}
     .bank-btn{grid-row:2;min-height:38px}
@@ -791,7 +795,7 @@
   const bankReadout = document.getElementById('bankReadout');
   const prevBank = document.getElementById('prevBank');
   const nextBank = document.getElementById('nextBank');
-  const TOUR_BANK_SIZE = 6;
+  const TOUR_BANK_SIZE = 9;
   let tourBank = 0;
   const totalBanks = Math.ceil(tourDates.length / TOUR_BANK_SIZE);
   function renderTourBank(){

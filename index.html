@@ -336,7 +336,7 @@
   .secbar .sq{width:7px;height:7px;background:#6b6c64;border-radius:1px}
 
   /* ===== PAD GRID ===== */
-  .pads{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .pads{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .pad{
     position:relative;display:flex;flex-direction:column;text-align:left;
     background:linear-gradient(180deg,var(--pad-face),var(--pad-face-lo));
@@ -379,6 +379,24 @@
   .pad:hover .strip{height:9px;box-shadow:0 0 18px 3px var(--c)}
   .pad:hover .go .arr{transform:translateX(5px)}
   .pad:active{transform:translateY(5px) scale(.997)}
+  .tour-pager{
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;
+    margin-top:-2px;
+  }
+  .bank-btn{
+    min-height:42px;border:0;border-radius:10px;
+    font:700 10px "IBM Plex Mono",monospace;letter-spacing:2px;color:var(--label);
+    text-transform:uppercase;background:linear-gradient(180deg,var(--ps-grey-hi),var(--ps-grey-lo));
+    box-shadow:0 1px 0 var(--bevel-hi) inset,0 -2px 4px var(--bevel-lo) inset,0 4px 8px rgba(0,0,0,.28);
+  }
+  .bank-btn:active{
+    transform:translateY(2px);
+    box-shadow:0 2px 6px var(--bevel-lo) inset,0 -1px 0 rgba(255,255,255,.18) inset;
+  }
+  .bank-readout{
+    min-width:132px;text-align:center;font-size:9px;letter-spacing:2px;
+    color:var(--label-soft);text-transform:uppercase;
+  }
 
   /* content panes (music/visuals/press/contact) */
   .pane{
@@ -494,25 +512,57 @@
 
   /* ===== RESPONSIVE ===== */
   @media (max-width:880px){
-    body{padding:14px 10px;align-items:flex-start}
-    .machine{padding:14px;border-radius:20px}
-    .deck{grid-template-columns:1fr;gap:14px}
-    .logo{font-size:40px}
-    .control{gap:14px}
+    body{padding:10px 8px 24px;align-items:flex-start}
+    .machine{padding:12px;border-radius:20px}
+    .deck{grid-template-columns:1fr;gap:12px}
+    .panel{padding:13px}
+    .brand{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:12px}
+    .logo-img{width:132px}
+    .tagline{margin-top:0;font-size:8px;letter-spacing:2px;line-height:1.45}
+    .control{gap:12px}
     .controls-row{justify-content:space-between}
+    .main{gap:12px}
+    .secbar{order:1}
+    #sec-tour,.pane{order:2}
+    .tour-pager{order:3}
+    .knobs{order:4}
+    .footbar{order:5}
     .knobs{gap:10px}
+    .socials{margin-top:0}
     .sound-console{grid-template-columns:1fr}
     .pads{grid-template-columns:repeat(2,1fr)}
+    .pad{min-height:98px;padding:12px 11px 10px}
+    .pad .date{font-size:14.5px}
+    .pad .city{font-size:10px}
+    .pad .venue{font-size:9px}
+    .footbar{align-items:flex-start}
+    .footbar nav{gap:11px}
   }
   @media (max-width:480px){
-    .logo{font-size:34px}
+    body{padding:8px 6px 18px}
+    .machine{padding:9px;border-radius:16px}
+    .deck{gap:10px}
+    .panel{border-radius:13px}
+    .brand{grid-template-columns:1fr}
+    .logo-img{width:138px}
     .jog{width:84px;height:84px}
     .jog .nub{transform:translate(-50%,-50%) translateY(-26px)}
+    .transport{gap:10px}
     .knob{width:50px;height:50px}
     .knob .tick{transform-origin:50% 19px}
-    .pads{grid-template-columns:1fr}
-    .pad{min-height:auto}
+    .knobs{grid-template-columns:repeat(4,1fr);gap:6px}
+    .knob-label{font-size:7.5px;letter-spacing:1.4px}
+    .knob-value{font-size:7px}
+    .pads{grid-template-columns:repeat(2,1fr);gap:9px}
+    .pad{min-height:92px;border-radius:9px}
+    .pad .go{font-size:8px;letter-spacing:1.1px}
+    .tour-pager{grid-template-columns:1fr 1fr;gap:8px}
+    .bank-readout{grid-column:1 / -1;grid-row:1;min-width:0}
+    .bank-btn{grid-row:2;min-height:38px}
     .nav{grid-template-columns:1fr 1fr}
+    .pane{padding:18px;min-height:260px}
+    .vgrid{grid-template-columns:1fr}
+    .footbar{font-size:8px;letter-spacing:1.4px}
   }
 </style>
 </head>
@@ -585,6 +635,11 @@
 
         <!-- TOUR (pads) -->
         <div id="sec-tour" class="pads"></div>
+        <div class="tour-pager" id="tourPager" aria-label="Tour date banks">
+          <button class="bank-btn" type="button" id="prevBank">Prev Bank</button>
+          <span class="bank-readout" id="bankReadout">Bank 01</span>
+          <button class="bank-btn" type="button" id="nextBank">More Dates</button>
+        </div>
 
         <!-- MUSIC -->
         <div id="sec-music" class="pane hidden">
@@ -702,21 +757,47 @@
   const STRIP = ["#8a5cf6","#d24bd2","#ff5aa0","#ff5a4d","#ff8a3d","#ffd23d","#a6e63d","#3dd96b","#3dd9c4","#3d9bff","#5c6cf6","#9b5cf6"];
 
   const grid = document.getElementById('sec-tour');
-  tourDates.forEach((d,i)=>{
-    const a=document.createElement('a');
-    a.className='pad';
-    a.href=d.ticketUrl; a.target='_blank'; a.rel='noopener';
-    a.style.setProperty('--c', STRIP[i % STRIP.length]);
-    a.innerHTML =
-      '<span class="strip"></span>'+
-      '<span class="num">'+String(i+1).padStart(2,'0')+'</span>'+
-      '<span class="date">'+d.date+'</span>'+
-      '<span class="city">'+d.city+'</span>'+
-      '<span class="venue">'+d.venue+'</span>'+
-      '<span class="go">TICKETS <span class="arr">→</span></span>';
-    grid.appendChild(a);
-  });
-  document.getElementById('seccount').textContent = tourDates.length+' DATES';
+  const bankReadout = document.getElementById('bankReadout');
+  const prevBank = document.getElementById('prevBank');
+  const nextBank = document.getElementById('nextBank');
+  const TOUR_BANK_SIZE = 6;
+  let tourBank = 0;
+  const totalBanks = Math.ceil(tourDates.length / TOUR_BANK_SIZE);
+  function renderTourBank(){
+    const start = tourBank * TOUR_BANK_SIZE;
+    const dates = tourDates.slice(start, start + TOUR_BANK_SIZE);
+    grid.innerHTML = '';
+    dates.forEach((d,i)=>{
+      const absoluteIndex = start + i;
+      const a=document.createElement('a');
+      a.className='pad';
+      a.href=d.ticketUrl; a.target='_blank'; a.rel='noopener';
+      a.style.setProperty('--c', STRIP[absoluteIndex % STRIP.length]);
+      a.innerHTML =
+        '<span class="strip"></span>'+
+        '<span class="num">'+String(absoluteIndex+1).padStart(2,'0')+'</span>'+
+        '<span class="date">'+d.date+'</span>'+
+        '<span class="city">'+d.city+'</span>'+
+        '<span class="venue">'+d.venue+'</span>'+
+        '<span class="go">TICKETS <span class="arr">→</span></span>';
+      grid.appendChild(a);
+    });
+    const end = Math.min(start + TOUR_BANK_SIZE, tourDates.length);
+    bankReadout.textContent = 'BANK '+String(tourBank+1).padStart(2,'0')+' / '+totalBanks+' · '+(start+1)+'-'+end+' OF '+tourDates.length;
+    prevBank.textContent = tourBank === 0 ? 'Last Bank' : 'Prev Bank';
+    nextBank.textContent = tourBank === totalBanks-1 ? 'First Bank' : 'More Dates';
+    document.getElementById('seccount').textContent = TOUR_BANK_SIZE+' PADS / '+tourDates.length+' DATES';
+  }
+  function moveBank(direction){
+    tourBank = (tourBank + direction + totalBanks) % totalBanks;
+    renderTourBank();
+    document.getElementById('lcd1').textContent='TOUR BANK '+String(tourBank+1).padStart(2,'0');
+    document.getElementById('lcd2').textContent='DATES '+bankReadout.textContent.split('· ')[1];
+    document.getElementById('lcd3').innerHTML='PAD BANK LOADED <span class="caret"></span>';
+  }
+  prevBank.addEventListener('click',()=>moveBank(-1));
+  nextBank.addEventListener('click',()=>moveBank(1));
+  renderTourBank();
 
   /* ===== SECTION SWITCHING ===== */
   const sections = ['tour','music','visuals','press','contact'];
@@ -736,13 +817,14 @@
       const el=document.getElementById('sec-'+s);
       if(el) el.classList.toggle('hidden', s!==sec);
     });
+    document.getElementById('tourPager').classList.toggle('hidden', sec!=='tour');
     document.querySelectorAll('.nav .btn').forEach(b=>b.classList.toggle('active', b.dataset.sec===sec));
     const [l1,l2,l3]=lcdMap[sec];
     document.getElementById('lcd1').textContent=l1;
     document.getElementById('lcd2').textContent=l2;
     document.getElementById('lcd3').innerHTML=l3+' <span class="caret"></span>';
     document.querySelector('#secbar .blip').innerHTML='<span class="sq"></span> '+secTitle[sec];
-    document.getElementById('seccount').textContent = sec==='tour' ? tourDates.length+' DATES' : '';
+    document.getElementById('seccount').textContent = sec==='tour' ? TOUR_BANK_SIZE+' PADS / '+tourDates.length+' DATES' : '';
   }
   document.querySelectorAll('[data-sec]').forEach(el=>{
     el.addEventListener('click', e=>{

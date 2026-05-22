@@ -33,13 +33,22 @@
     --label:#42433d;
     --label-soft:#5a5b53;
     --ink-light:#cfd0c7;
+    --bass:58;
+    --drive:48;
+    --space:64;
+    --output:72;
+    --cursor-x:50vw;
+    --cursor-y:50vh;
   }
 
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
+  @media (pointer:fine){
+    body,button,a,.knob,.jog,.slider .knob{cursor:none}
+  }
   body{
     background:
-      radial-gradient(80% 70% at 50% 0%, rgba(127,255,166,.08) 0%, transparent 42%),
+      radial-gradient(80% 70% at 50% 0%, rgba(127,255,166,calc(.03 + var(--space) * .0012)) 0%, transparent 42%),
       radial-gradient(120% 120% at 50% -10%, #252621 0%, var(--page) 55%, #0d0d0c 100%);
     color:var(--ink);
     font-family:"IBM Plex Mono",monospace;
@@ -50,6 +59,21 @@
     justify-content:center;
     padding:clamp(34px,5vh,64px) 18px 48px;
   }
+  body.display-mode{
+    padding:20px;
+    background:#060706;
+  }
+  body.display-mode .machine{
+    width:min(1380px,100%);
+    box-shadow:
+      0 1px 0 var(--bevel-hi) inset,
+      0 -2px 0 var(--bevel-lo) inset,
+      0 0 80px rgba(127,255,166,.18),
+      0 50px 110px -30px rgba(0,0,0,.9);
+  }
+  body.playing .lcd .led,
+  body.playing .footbar .live{animation:pulse 1.1s infinite ease-in-out}
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:.65}50%{transform:scale(1.4);opacity:1}}
 
   /* grain overlay across whole page */
   body::after{
@@ -58,6 +82,25 @@
     opacity:.05;mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
+  .cursor{
+    position:fixed;left:0;top:0;z-index:10000;pointer-events:none;
+    width:30px;height:30px;border-radius:50%;
+    border:1.5px solid rgba(232,235,222,.9);
+    background:rgba(232,235,222,.14);
+    mix-blend-mode:difference;
+    transform:translate3d(calc(var(--cursor-x) - 50%),calc(var(--cursor-y) - 50%),0);
+    transition:width .16s ease,height .16s ease,background .16s ease,border-color .16s ease;
+  }
+  .cursor::after{
+    content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;border-radius:50%;
+    background:rgba(232,235,222,.9);transform:translate(-50%,-50%);
+    transition:opacity .16s ease;
+  }
+  .cursor.is-hover{
+    width:44px;height:44px;background:transparent;border-color:#fff;
+  }
+  .cursor.is-hover::after{opacity:0}
+  @media (pointer:coarse){.cursor{display:none}}
 
   /* ===== HARDWARE BODY ===== */
   .machine{
@@ -71,7 +114,7 @@
     box-shadow:
       0 1px 0 var(--bevel-hi) inset,
       0 -2px 0 var(--bevel-lo) inset,
-      0 40px 90px -20px rgba(0,0,0,.8),
+      0 40px 90px -20px rgba(0,0,0,calc(.65 + var(--bass) * .002)),
       0 8px 22px rgba(0,0,0,.45);
   }
   /* plastic grain on the body */
@@ -120,7 +163,7 @@
   /* LCD */
   .lcd{
     background:
-      radial-gradient(140% 120% at 30% 0%, #14201a 0%, var(--lcd-black) 70%);
+      radial-gradient(140% 120% at 30% 0%, rgba(24,42,30,calc(.55 + var(--space) * .004)) 0%, var(--lcd-black) 70%);
     border-radius:10px;
     padding:12px 13px 14px;
     position:relative;
@@ -208,6 +251,13 @@
     box-shadow:0 1px 0 var(--bevel-hi) inset,0 -3px 7px var(--bevel-lo) inset,0 4px 7px rgba(0,0,0,.32);
     display:flex;align-items:center;justify-content:center;transition:transform .07s;
   }
+  .tbtn.is-on{
+    box-shadow:
+      0 0 0 1px rgba(127,255,166,.34),
+      0 1px 0 var(--bevel-hi) inset,
+      0 -3px 7px var(--bevel-lo) inset,
+      0 0 24px rgba(127,255,166,.32);
+  }
   .tbtn:active{transform:translateY(2px)}
   .tbtn .ico{width:14px;height:14px;border-radius:50%}
   .rec .ico{background:#e23b2e;box-shadow:0 0 8px rgba(226,59,46,.7)}
@@ -232,6 +282,11 @@
     width:24px;height:24px;border-radius:7px;cursor:grab;
     background:linear-gradient(180deg,var(--ps-grey-hi),var(--plastic-dark));
     box-shadow:0 1px 0 var(--bevel-hi) inset,0 -2px 4px var(--bevel-lo) inset,0 3px 6px rgba(0,0,0,.4);
+  }
+  .slider::after{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:calc(var(--output) * 1%);
+    border-radius:8px;background:linear-gradient(90deg,rgba(127,255,166,.18),rgba(127,255,166,.44));
+    pointer-events:none;mix-blend-mode:screen;
   }
 
   /* left footer social */
@@ -260,10 +315,15 @@
     background:radial-gradient(circle at 38% 30%,#a0a098,#737469 62%,#585952 100%);
     box-shadow:0 2px 0 rgba(255,255,255,.3) inset,0 -4px 9px rgba(0,0,0,.4) inset,0 5px 9px rgba(0,0,0,.34);
   }
+  .knob.is-dragging{filter:brightness(1.1)}
   .knob .tick{position:absolute;top:6px;left:50%;width:3px;height:11px;border-radius:2px;
     background:#3f4038;transform-origin:50% 20px;transform:translateX(-50%)}
   .knob-dot{width:4px;height:4px;border-radius:50%;background:#cfd0c7;
     box-shadow:0 0 5px rgba(255,255,255,.5)}
+  .knob-value{
+    font-size:8px;letter-spacing:1.5px;color:var(--label-soft);
+    min-width:28px;text-align:center;
+  }
 
   /* section header strip */
   .secbar{
@@ -287,6 +347,14 @@
       0 7px 11px rgba(0,0,0,.34);
     transition:transform .08s ease, box-shadow .14s ease;
     overflow:hidden;
+  }
+  body.playing .pad:nth-child(4n+1){animation:padGlow 1.6s infinite ease-in-out}
+  body.playing .pad:nth-child(4n+2){animation:padGlow 1.8s infinite ease-in-out .2s}
+  body.playing .pad:nth-child(4n+3){animation:padGlow 1.45s infinite ease-in-out .35s}
+  body.playing .pad:nth-child(4n+4){animation:padGlow 1.7s infinite ease-in-out .1s}
+  @keyframes padGlow{
+    0%,100%{filter:brightness(1)}
+    50%{filter:brightness(calc(1.02 + var(--drive) * .0015))}
   }
   .pad .strip{
     position:absolute;top:0;left:8px;right:8px;height:7px;border-radius:0 0 4px 4px;
@@ -330,6 +398,39 @@
     display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:2px;
     color:var(--lcd-dim)}
   .pane iframe{width:100%;border:0;border-radius:8px;margin-top:4px}
+  .mix-strip{
+    position:relative;z-index:2;display:grid;grid-template-columns:repeat(16,1fr);gap:5px;
+    height:58px;margin:0 0 16px;padding:10px;border-radius:10px;
+    background:rgba(8,12,8,.72);border:1px solid rgba(127,255,166,.16);
+    box-shadow:0 8px 18px rgba(0,0,0,.26) inset;
+  }
+  .mix-strip i{
+    align-self:end;height:22%;border-radius:3px 3px 1px 1px;
+    background:linear-gradient(180deg,#d8ff78,#7fffa6 48%,#34a95c);
+    box-shadow:0 0 12px rgba(127,255,166,.35);
+    transform-origin:bottom;
+  }
+  body.playing .mix-strip i{animation:meter 1s infinite ease-in-out}
+  body.playing .mix-strip i:nth-child(2n){animation-duration:.8s}
+  body.playing .mix-strip i:nth-child(3n){animation-duration:1.25s}
+  body.playing .mix-strip i:nth-child(5n){animation-duration:.7s}
+  @keyframes meter{
+    0%,100%{height:18%}
+    35%{height:calc(34% + var(--bass) * .42%)}
+    70%{height:calc(24% + var(--space) * .28%)}
+  }
+  .sound-console{
+    position:relative;z-index:2;display:grid;grid-template-columns:1fr auto;gap:12px;
+    align-items:center;margin-bottom:14px;color:var(--lcd-dim);
+    font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  }
+  .sound-console strong{color:var(--lcd-text);font-weight:500}
+  .mini-controls{display:flex;gap:8px}
+  .mini-controls button{
+    border:1px solid rgba(127,255,166,.26);border-radius:999px;
+    background:rgba(127,255,166,.08);color:var(--lcd-text);
+    padding:7px 11px;font:600 10px "IBM Plex Mono",monospace;letter-spacing:1.5px;
+  }
 
   /* visuals gallery */
   .vgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:6px;position:relative;z-index:2}
@@ -368,6 +469,11 @@
   .footbar nav{display:flex;gap:16px;flex-wrap:wrap}
   .footbar a{color:var(--label);text-decoration:none;transition:color .12s}
   .footbar a:hover{color:var(--ink)}
+  .footbar button{
+    border:0;background:none;color:var(--label);font:inherit;text-transform:uppercase;
+    letter-spacing:inherit;padding:0;
+  }
+  .footbar button:hover{color:var(--ink)}
 
   .hidden{display:none !important}
 
@@ -380,6 +486,7 @@
     .control{gap:14px}
     .controls-row{justify-content:space-between}
     .knobs{gap:10px}
+    .sound-console{grid-template-columns:1fr}
     .pads{grid-template-columns:repeat(2,1fr)}
   }
   @media (max-width:480px){
@@ -450,10 +557,10 @@
       <section class="main" aria-label="Main panel">
 
         <div class="knobs">
-          <div class="knob-cell"><div class="knob" data-knob><span class="tick"></span></div><span class="knob-label">BASS</span><span class="knob-dot"></span></div>
-          <div class="knob-cell"><div class="knob" data-knob><span class="tick"></span></div><span class="knob-label">DRIVE</span><span class="knob-dot"></span></div>
-          <div class="knob-cell"><div class="knob" data-knob><span class="tick"></span></div><span class="knob-label">SPACE</span><span class="knob-dot"></span></div>
-          <div class="knob-cell"><div class="knob" data-knob><span class="tick"></span></div><span class="knob-label">OUTPUT</span><span class="knob-dot"></span></div>
+          <div class="knob-cell"><div class="knob" data-knob="bass" aria-label="Bass control" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="58"><span class="tick"></span></div><span class="knob-label">BASS</span><span class="knob-value" id="bassVal">58</span></div>
+          <div class="knob-cell"><div class="knob" data-knob="drive" aria-label="Drive control" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="48"><span class="tick"></span></div><span class="knob-label">DRIVE</span><span class="knob-value" id="driveVal">48</span></div>
+          <div class="knob-cell"><div class="knob" data-knob="space" aria-label="Space control" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="64"><span class="tick"></span></div><span class="knob-label">SPACE</span><span class="knob-value" id="spaceVal">64</span></div>
+          <div class="knob-cell"><div class="knob" data-knob="output" aria-label="Output control" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="72"><span class="tick"></span></div><span class="knob-label">OUTPUT</span><span class="knob-value" id="outputVal">72</span></div>
         </div>
 
         <div class="secbar" id="secbar">
@@ -467,8 +574,20 @@
         <!-- MUSIC -->
         <div id="sec-music" class="pane hidden">
           <h2>// MUSIC</h2>
-          <p>Latest sets, edits and live recordings live on SoundCloud. Full archive below. Spotify and Apple Music links drop in when the catalog goes up.</p>
-          <iframe height="300" scrolling="no" allow="autoplay" loading="lazy"
+          <div class="sound-console">
+            <span><strong id="playerState">Player ready</strong> / knobs shape the room</span>
+            <div class="mini-controls">
+              <button type="button" id="miniPlay">Play</button>
+              <button type="button" id="miniPause">Pause</button>
+              <button type="button" id="miniNext">Next</button>
+            </div>
+          </div>
+          <div class="mix-strip" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <p>Latest sets, edits and live recordings live on SoundCloud. Use the transport buttons or the embedded player below.</p>
+          <iframe id="soundcloudPlayer" height="300" scrolling="no" allow="autoplay" loading="lazy"
             src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/yooqthegawd&color=%237fffa6&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=true"></iframe>
           <p style="margin-top:16px"><a href="https://soundcloud.com/yooqthegawd" target="_blank" rel="noopener">OPEN FULL SOUNDCLOUD →</a></p>
         </div>
@@ -521,12 +640,15 @@
             <a href="https://soundcloud.com/yooqthegawd" target="_blank" rel="noopener">SOUNDCLOUD</a>
             <a href="#" data-sec="contact">SPOTIFY</a>
             <a href="#" data-sec="contact">CONTACT</a>
+            <button type="button" id="displayMode">DISPLAY</button>
           </nav>
         </div>
       </section>
     </div>
   </main>
+  <div class="cursor" id="cursor" aria-hidden="true"></div>
 
+<script src="https://w.soundcloud.com/player/api.js"></script>
 <script>
   /* ===== TOUR DATA (verified against letgodsortemout.com/pages/tour) ===== */
   const tourDates = [
@@ -610,18 +732,133 @@
     });
   });
 
-  /* ===== KNOB + JOG ROTATION ON MOUSE/SCROLL ===== */
-  const knobTicks=[...document.querySelectorAll('.knob[data-knob] .tick')];
-  let kr=[ -120,-60,30,90 ];
-  function setKnobs(){ knobTicks.forEach((t,i)=>t.style.transform='translateX(-50%) rotate('+kr[i]+'deg)'); }
-  setKnobs();
-  window.addEventListener('mousemove', e=>{
-    const x=(e.clientX/window.innerWidth-0.5);
-    knobTicks.forEach((t,i)=>{ t.style.transform='translateX(-50%) rotate('+(kr[i]+x*22)+'deg)'; });
+  /* ===== CURSOR ===== */
+  const cursor=document.getElementById('cursor');
+  window.addEventListener('pointermove', e=>{
+    document.documentElement.style.setProperty('--cursor-x', e.clientX+'px');
+    document.documentElement.style.setProperty('--cursor-y', e.clientY+'px');
+  }, {passive:true});
+  document.addEventListener('pointerover', e=>{
+    if(e.target.closest('a,button,.knob,.jog,.slider .knob,iframe')) cursor.classList.add('is-hover');
   });
+  document.addEventListener('pointerout', e=>{
+    if(e.target.closest('a,button,.knob,.jog,.slider .knob,iframe')) cursor.classList.remove('is-hover');
+  });
+
+  /* ===== SOUNDCLOUD TRANSPORT ===== */
+  const playerFrame=document.getElementById('soundcloudPlayer');
+  const playerState=document.getElementById('playerState');
+  let soundcloudWidget=null;
+  let isPlaying=false;
+  function setPlaying(on){
+    isPlaying=on;
+    document.body.classList.toggle('playing', on);
+    document.querySelector('.play').classList.toggle('is-on', on);
+    if(playerState) playerState.textContent = on ? 'Playing SoundCloud' : 'Player ready';
+    const l3=document.getElementById('lcd3');
+    if(l3 && !document.getElementById('sec-music').classList.contains('hidden')){
+      l3.innerHTML=(on ? 'SIGNAL HOT' : 'READY TO PLAY')+' <span class="caret"></span>';
+    }
+  }
+  function initSoundCloud(){
+    if(soundcloudWidget || !window.SC || !playerFrame) return;
+    soundcloudWidget=SC.Widget(playerFrame);
+    soundcloudWidget.bind(SC.Widget.Events.READY, ()=>{
+      applyKnobs();
+      if(playerState) playerState.textContent='SoundCloud connected';
+    });
+    soundcloudWidget.bind(SC.Widget.Events.PLAY, ()=>setPlaying(true));
+    soundcloudWidget.bind(SC.Widget.Events.PAUSE, ()=>setPlaying(false));
+    soundcloudWidget.bind(SC.Widget.Events.FINISH, ()=>setPlaying(false));
+  }
+  window.addEventListener('load', initSoundCloud);
+
+  function playSound(){
+    show('music');
+    initSoundCloud();
+    if(soundcloudWidget) soundcloudWidget.play();
+    setPlaying(true);
+  }
+  function pauseSound(){
+    if(soundcloudWidget) soundcloudWidget.pause();
+    setPlaying(false);
+  }
+  function nextSound(){
+    show('music');
+    initSoundCloud();
+    if(soundcloudWidget && soundcloudWidget.next) soundcloudWidget.next();
+    setPlaying(true);
+  }
+  document.querySelector('.play').addEventListener('click',()=> isPlaying ? pauseSound() : playSound());
+  document.getElementById('miniPlay').addEventListener('click', playSound);
+  document.getElementById('miniPause').addEventListener('click', pauseSound);
+  document.getElementById('miniNext').addEventListener('click', nextSound);
+  document.querySelector('.rec').addEventListener('click', nextSound);
+
+  /* ===== FUNCTIONAL KNOBS ===== */
+  const knobState={bass:58,drive:48,space:64,output:72};
+  const knobAngles={bass:[-135,135],drive:[-135,135],space:[-135,135],output:[-135,135]};
+  const knobCopy={
+    bass:'BASS BODY',
+    drive:'DRIVE HEAT',
+    space:'ROOM WIDTH',
+    output:'MASTER OUT'
+  };
+  function valueToAngle(name,value){
+    const [min,max]=knobAngles[name];
+    return min+(max-min)*(value/100);
+  }
+  function setKnob(name,value){
+    const clamped=Math.max(0,Math.min(100,Math.round(value)));
+    knobState[name]=clamped;
+    document.documentElement.style.setProperty('--'+name, clamped);
+    const knob=document.querySelector('[data-knob="'+name+'"]');
+    const tick=knob.querySelector('.tick');
+    tick.style.transform='translateX(-50%) rotate('+valueToAngle(name,clamped)+'deg)';
+    knob.setAttribute('aria-valuenow', clamped);
+    const valueEl=document.getElementById(name+'Val');
+    if(valueEl) valueEl.textContent=String(clamped).padStart(2,'0');
+  }
+  function applyKnobs(){
+    Object.entries(knobState).forEach(([name,value])=>setKnob(name,value));
+    document.querySelector('.machine').style.filter =
+      'saturate('+(0.92+knobState.drive/250)+') contrast('+(0.96+knobState.bass/500)+')';
+    document.querySelectorAll('.pane,.lcd').forEach(el=>{
+      el.style.boxShadow =
+        '0 0 0 2px rgba(255,255,255,.16), 0 6px 14px rgba(0,0,0,.45) inset, 0 0 '+(knobState.space/3)+'px rgba(127,255,166,.16)';
+    });
+    if(soundcloudWidget && soundcloudWidget.setVolume) soundcloudWidget.setVolume(knobState.output);
+  }
+  applyKnobs();
+  document.querySelectorAll('.knob[data-knob]').forEach(knob=>{
+    const name=knob.dataset.knob;
+    let startY=0,startVal=0;
+    knob.addEventListener('pointerdown', e=>{
+      e.preventDefault();
+      knob.classList.add('is-dragging');
+      knob.setPointerCapture(e.pointerId);
+      startY=e.clientY;
+      startVal=knobState[name];
+      document.getElementById('lcd1').textContent=knobCopy[name];
+    });
+    knob.addEventListener('pointermove', e=>{
+      if(!knob.classList.contains('is-dragging')) return;
+      setKnob(name,startVal+(startY-e.clientY)*0.75);
+      applyKnobs();
+    });
+    knob.addEventListener('pointerup', e=>{
+      knob.classList.remove('is-dragging');
+      knob.releasePointerCapture(e.pointerId);
+      document.getElementById('lcd2').textContent=name.toUpperCase()+' '+String(knobState[name]).padStart(2,'0');
+      document.getElementById('lcd3').innerHTML='PARAMETER SAVED <span class="caret"></span>';
+    });
+  });
+
   const jog=document.getElementById('jog');
   let jogR=0;
   window.addEventListener('scroll', ()=>{ jogR=window.scrollY*0.4; jog.style.transform='rotate('+jogR+'deg)'; }, {passive:true});
+  jog.addEventListener('click',()=>document.body.classList.toggle('display-mode'));
+  document.getElementById('displayMode').addEventListener('click',()=>document.body.classList.toggle('display-mode'));
 
   /* tactile press feedback on transport buttons */
   document.querySelectorAll('.tbtn').forEach(b=>{

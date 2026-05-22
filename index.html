@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>YoO Q // TOUR MACHINE</title>
+<meta name="description" content="YoO Q. Touring DJ, producer, live sound selector. Tour dates, music, booking." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Michroma&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* plastic body */
+    --ps-grey:#9a9a92;
+    --ps-grey-hi:#a9a9a0;
+    --ps-grey-lo:#85857d;
+    --plastic-dark:#5f605c;
+    --panel-shadow:#2f302d;
+    --groove:#76766e;
+    --bevel-hi:rgba(255,255,255,.34);
+    --bevel-lo:rgba(20,21,18,.45);
+    /* pads */
+    --pad-face:#7e7f78;
+    --pad-face-lo:#6b6c65;
+    --pad-deep:#42433f;
+    /* lcd */
+    --lcd-black:#0b0d0c;
+    --lcd-text:#cfe8c4;
+    --lcd-dim:#5d7257;
+    /* page */
+    --page:#171715;
+    --ink:#33342f;
+    --label:#42433d;
+    --label-soft:#5a5b53;
+    --ink-light:#cfd0c7;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(120% 120% at 50% -10%, #232320 0%, var(--page) 55%, #0f0f0d 100%);
+    color:var(--ink);
+    font-family:"IBM Plex Mono",monospace;
+    -webkit-font-smoothing:antialiased;
+    min-height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px 18px;
+  }
+
+  /* grain overlay across whole page */
+  body::after{
+    content:"";
+    position:fixed;inset:0;pointer-events:none;z-index:9999;
+    opacity:.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ===== HARDWARE BODY ===== */
+  .machine{
+    width:min(1180px,100%);
+    background:
+      linear-gradient(180deg,var(--ps-grey-hi),var(--ps-grey) 18%,var(--ps-grey-lo));
+    border-radius:26px;
+    padding:22px;
+    position:relative;
+    box-shadow:
+      0 1px 0 var(--bevel-hi) inset,
+      0 -2px 0 var(--bevel-lo) inset,
+      0 40px 90px -20px rgba(0,0,0,.8),
+      0 8px 22px rgba(0,0,0,.45);
+  }
+  /* plastic grain on the body */
+  .machine::before{
+    content:"";position:absolute;inset:0;border-radius:26px;pointer-events:none;
+    opacity:.5;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.18'/%3E%3C/svg%3E");
+  }
+
+  .deck{
+    display:grid;
+    grid-template-columns:300px 1fr;
+    gap:20px;
+    position:relative;z-index:2;
+  }
+
+  /* recessed panel look shared by sub-panels */
+  .panel{
+    background:linear-gradient(180deg,var(--ps-grey-lo),#90908899);
+    border-radius:18px;
+    padding:20px;
+    box-shadow:
+      0 2px 1px var(--bevel-hi) inset,
+      0 -3px 6px var(--bevel-lo) inset,
+      0 1px 0 rgba(255,255,255,.25);
+  }
+
+  /* ===== LEFT CONTROL SECTION ===== */
+  .control{display:flex;flex-direction:column;gap:18px}
+
+  .brand{margin-top:2px}
+  .logo-img{
+    display:block;width:182px;max-width:100%;height:auto;
+    /* emboss the brush mark into the plastic */
+    filter:
+      drop-shadow(0 1px 0 rgba(255,255,255,.45))
+      drop-shadow(0 -1px 1px rgba(20,21,18,.4));
+    opacity:.92;
+  }
+  .tagline{
+    margin-top:10px;
+    font-size:9.5px;letter-spacing:2.5px;color:var(--label);
+    line-height:1.7;text-transform:uppercase;font-weight:600;
+  }
+
+  /* LCD */
+  .lcd{
+    background:
+      radial-gradient(140% 120% at 30% 0%, #14201a 0%, var(--lcd-black) 70%);
+    border-radius:10px;
+    padding:14px 14px 16px;
+    position:relative;
+    box-shadow:
+      0 0 0 2px rgba(255,255,255,.18),
+      0 5px 10px rgba(0,0,0,.4) inset,
+      0 1px 0 rgba(255,255,255,.3);
+    overflow:hidden;
+  }
+  .lcd::after{ /* scanlines */
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.25;
+    background:repeating-linear-gradient(180deg,rgba(0,0,0,.0) 0 2px,rgba(0,0,0,.5) 2px 3px);
+  }
+  .lcd .led{
+    position:absolute;top:11px;right:12px;width:7px;height:7px;border-radius:2px;
+    background:#7fffa6;box-shadow:0 0 8px #7fffa6;animation:flick 2.4s infinite steps(1);
+  }
+  @keyframes flick{0%,92%{opacity:1}93%,96%{opacity:.35}97%,100%{opacity:1}}
+  .lcd-line{
+    font-family:"Share Tech Mono",monospace;
+    color:var(--lcd-text);
+    font-size:13px;letter-spacing:1.5px;line-height:1.65;
+    text-shadow:0 0 6px rgba(127,255,166,.35);
+  }
+  .lcd-line.dim{color:var(--lcd-dim);text-shadow:none}
+  .caret{display:inline-block;width:8px;height:14px;background:var(--lcd-text);
+    transform:translateY(2px);animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* nav buttons */
+  .nav{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .nav .full{grid-column:1 / -1}
+  .btn{
+    font-family:"IBM Plex Mono",monospace;
+    font-weight:600;font-size:11px;letter-spacing:1.5px;
+    color:var(--label);text-transform:uppercase;
+    background:linear-gradient(180deg,var(--ps-grey-hi),var(--ps-grey-lo));
+    border:none;border-radius:9px;padding:11px 12px;cursor:pointer;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    box-shadow:
+      0 1px 0 var(--bevel-hi) inset,
+      0 -2px 4px var(--bevel-lo) inset,
+      0 3px 5px rgba(0,0,0,.28);
+    transition:transform .06s ease, box-shadow .12s ease;
+    user-select:none;
+  }
+  .btn:hover{transform:translateY(1px)}
+  .btn:active,.btn.active{
+    transform:translateY(2px);
+    box-shadow:
+      0 2px 6px var(--bevel-lo) inset,
+      0 -1px 0 rgba(255,255,255,.18) inset;
+    color:var(--ink);
+  }
+  .btn .dot{width:6px;height:6px;border-radius:50%;background:#6c6d65;
+    box-shadow:0 0 0 1px rgba(0,0,0,.2) inset;transition:.15s}
+  .btn.active .dot{background:#ff5a4d;box-shadow:0 0 7px #ff5a4d}
+
+  /* jog wheel + play/rec row */
+  .controls-row{display:flex;gap:18px;align-items:center}
+  .jog{
+    width:104px;height:104px;border-radius:50%;flex:0 0 auto;
+    background:
+      radial-gradient(circle at 38% 32%, #9d9d95, #6f706a 60%, #54554f 100%);
+    box-shadow:
+      0 2px 0 rgba(255,255,255,.3) inset,
+      0 -4px 10px rgba(0,0,0,.4) inset,
+      0 6px 12px rgba(0,0,0,.4);
+    position:relative;cursor:grab;
+  }
+  .jog::before{
+    content:"";position:absolute;inset:24px;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%,#8e8f88,#5b5c56);
+    box-shadow:0 2px 6px rgba(0,0,0,.45) inset,0 1px 0 rgba(255,255,255,.25);
+  }
+  .jog .nub{
+    position:absolute;top:50%;left:50%;width:11px;height:11px;border-radius:50%;
+    background:#48493f;transform:translate(-50%,-50%) translateY(-32px);
+    box-shadow:0 1px 2px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.15) inset;
+  }
+  .transport{display:flex;flex-direction:column;gap:14px}
+  .tbtn{
+    width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;position:relative;
+    background:radial-gradient(circle at 38% 32%,var(--ps-grey-hi),var(--ps-grey-lo));
+    box-shadow:0 1px 0 var(--bevel-hi) inset,0 -3px 7px var(--bevel-lo) inset,0 4px 7px rgba(0,0,0,.32);
+    display:flex;align-items:center;justify-content:center;transition:transform .07s;
+  }
+  .tbtn:active{transform:translateY(2px)}
+  .tbtn .ico{width:14px;height:14px;border-radius:50%}
+  .rec .ico{background:#e23b2e;box-shadow:0 0 8px rgba(226,59,46,.7)}
+  .play .ico{width:0;height:0;border-radius:0;border-left:14px solid #2fbf4f;
+    border-top:8px solid transparent;border-bottom:8px solid transparent;
+    filter:drop-shadow(0 0 6px rgba(47,191,79,.6))}
+  .tlabel{font-size:9px;letter-spacing:2px;color:var(--label);align-self:center}
+
+  /* master volume */
+  .vol{margin-top:2px}
+  .vol .vlabel{font-size:9px;letter-spacing:2.5px;color:var(--label);margin-bottom:9px}
+  .slider{
+    position:relative;height:14px;border-radius:8px;
+    background:linear-gradient(180deg,#6f706a,#83847d);
+    box-shadow:0 2px 4px rgba(0,0,0,.4) inset,0 1px 0 rgba(255,255,255,.25);
+  }
+  .slider .ticks{position:absolute;inset:0;display:flex;justify-content:space-between;
+    align-items:center;padding:0 10px;pointer-events:none}
+  .slider .ticks i{width:2px;height:2px;border-radius:50%;background:rgba(40,41,36,.5)}
+  .slider .knob{
+    position:absolute;top:50%;left:62%;transform:translate(-50%,-50%);
+    width:24px;height:24px;border-radius:7px;cursor:grab;
+    background:linear-gradient(180deg,var(--ps-grey-hi),var(--plastic-dark));
+    box-shadow:0 1px 0 var(--bevel-hi) inset,0 -2px 4px var(--bevel-lo) inset,0 3px 6px rgba(0,0,0,.4);
+  }
+
+  /* left footer social */
+  .socials{
+    margin-top:auto;display:flex;flex-wrap:wrap;gap:7px;padding-top:6px;
+  }
+  .chip{
+    font-size:9px;letter-spacing:1.5px;color:var(--label);text-decoration:none;
+    text-transform:uppercase;font-weight:600;
+    padding:7px 10px;border-radius:7px;
+    background:linear-gradient(180deg,var(--ps-grey-hi),var(--ps-grey-lo));
+    box-shadow:0 1px 0 var(--bevel-hi) inset,0 -2px 3px var(--bevel-lo) inset,0 2px 4px rgba(0,0,0,.22);
+    transition:transform .07s,color .12s;
+  }
+  .chip:hover{transform:translateY(1px);color:var(--ink)}
+
+  /* ===== RIGHT MAIN PANEL ===== */
+  .main{display:flex;flex-direction:column;gap:18px}
+
+  /* knob row */
+  .knobs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .knob-cell{display:flex;flex-direction:column;align-items:center;gap:9px}
+  .knob-label{font-size:9px;letter-spacing:2.5px;color:var(--label);font-weight:600}
+  .knob{
+    width:62px;height:62px;border-radius:50%;position:relative;cursor:ns-resize;
+    background:radial-gradient(circle at 38% 30%,#a0a098,#737469 62%,#585952 100%);
+    box-shadow:0 2px 0 rgba(255,255,255,.3) inset,0 -4px 9px rgba(0,0,0,.4) inset,0 5px 9px rgba(0,0,0,.34);
+  }
+  .knob .tick{position:absolute;top:7px;left:50%;width:3px;height:13px;border-radius:2px;
+    background:#3f4038;transform-origin:50% 24px;transform:translateX(-50%)}
+  .knob-dot{width:4px;height:4px;border-radius:50%;background:#cfd0c7;
+    box-shadow:0 0 5px rgba(255,255,255,.5)}
+
+  /* section header strip */
+  .secbar{
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:10px;letter-spacing:2.5px;color:var(--label-soft);text-transform:uppercase;
+    padding:0 2px;
+  }
+  .secbar .blip{display:inline-flex;align-items:center;gap:8px}
+  .secbar .sq{width:7px;height:7px;background:#6b6c64;border-radius:1px}
+
+  /* ===== PAD GRID ===== */
+  .pads{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .pad{
+    position:relative;display:flex;flex-direction:column;text-align:left;
+    background:linear-gradient(180deg,var(--pad-face),var(--pad-face-lo));
+    border:none;border-radius:12px;padding:14px 13px 12px;cursor:pointer;
+    color:var(--ink-light);text-decoration:none;min-height:120px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.28) inset,
+      0 -5px 10px rgba(0,0,0,.32) inset,
+      0 7px 11px rgba(0,0,0,.34);
+    transition:transform .08s ease, box-shadow .14s ease;
+    overflow:hidden;
+  }
+  .pad .strip{
+    position:absolute;top:0;left:8px;right:8px;height:7px;border-radius:0 0 4px 4px;
+    background:var(--c);box-shadow:0 0 10px 1px var(--c);
+    transition:box-shadow .18s, height .12s;
+  }
+  .pad .num{position:absolute;top:-16px;left:2px;font-size:9px;color:var(--label);}
+  .pad .date{font-family:"Share Tech Mono",monospace;font-size:16px;letter-spacing:1px;
+    margin-top:8px;color:#e7e8df}
+  .pad .city{font-size:11px;letter-spacing:.6px;margin-top:7px;color:#dadbd1}
+  .pad .venue{font-size:9.5px;letter-spacing:.6px;margin-top:3px;color:#a9aaa0;line-height:1.4}
+  .pad .go{margin-top:auto;display:flex;align-items:center;gap:6px;
+    font-size:9.5px;letter-spacing:1.5px;color:#c7c8be;padding-top:10px}
+  .pad .go .arr{transition:transform .16s}
+  .pad:hover{
+    transform:translateY(3px);
+    box-shadow:
+      0 3px 8px rgba(0,0,0,.34) inset,
+      0 -1px 0 rgba(255,255,255,.16) inset;
+  }
+  .pad:hover .strip{height:9px;box-shadow:0 0 18px 3px var(--c)}
+  .pad:hover .go .arr{transform:translateX(5px)}
+  .pad:active{transform:translateY(5px) scale(.997)}
+
+  /* content panes (music/visuals/press/contact) */
+  .pane{
+    background:radial-gradient(140% 120% at 30% 0%, #14201a 0%, var(--lcd-black) 80%);
+    border-radius:14px;padding:26px;color:var(--lcd-text);position:relative;overflow:hidden;
+    box-shadow:0 0 0 2px rgba(255,255,255,.16),0 6px 14px rgba(0,0,0,.45) inset;
+    min-height:300px;
+  }
+  .pane::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.2;
+    background:repeating-linear-gradient(180deg,transparent 0 2px,rgba(0,0,0,.5) 2px 3px)}
+  .pane h2{font-family:"Share Tech Mono",monospace;font-size:18px;letter-spacing:3px;
+    margin-bottom:16px;color:var(--lcd-text);text-shadow:0 0 8px rgba(127,255,166,.3)}
+  .pane p{font-size:12.5px;line-height:1.9;letter-spacing:.5px;color:#b9d3b0;max-width:62ch}
+  .pane a{color:#9fe6ff;text-decoration:none;border-bottom:1px dotted #4d8aa0}
+  .pane .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}
+  .pane .tile{aspect-ratio:1;border-radius:8px;border:1px solid rgba(127,255,166,.18);
+    background:repeating-linear-gradient(45deg,#10160f 0 8px,#0c110b 8px 16px);
+    display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:2px;
+    color:var(--lcd-dim)}
+  .pane iframe{width:100%;border:0;border-radius:8px;margin-top:4px}
+
+  /* visuals gallery */
+  .vgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:6px;position:relative;z-index:2}
+  .vtile{position:relative;aspect-ratio:4/5;border-radius:10px;overflow:hidden;display:block;
+    border:1px solid rgba(127,255,166,.18);background:#0c110b;text-decoration:none}
+  .vtile img{width:100%;height:100%;object-fit:cover;filter:saturate(1.05) contrast(1.02);
+    transition:transform .4s ease}
+  .vtile:hover img{transform:scale(1.04)}
+  .vtile.placeholder{display:flex;align-items:center;justify-content:center;
+    background:repeating-linear-gradient(45deg,#10160f 0 8px,#0c110b 8px 16px)}
+  .vcap{position:absolute;left:10px;bottom:9px;font-size:9px;letter-spacing:2px;color:#cfe8c4;
+    background:rgba(7,9,7,.7);padding:4px 7px;border-radius:4px}
+  .vtile.placeholder .vcap{position:static;background:none;color:var(--lcd-dim)}
+
+  /* press portrait */
+  .presswrap{display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:start;position:relative;z-index:2}
+  .pressimg{width:100%;border-radius:10px;border:1px solid rgba(127,255,166,.18);
+    filter:saturate(1.05);object-fit:cover;aspect-ratio:4/5}
+  @media (max-width:560px){.vgrid{grid-template-columns:1fr}.presswrap{grid-template-columns:1fr}.pressimg{max-width:240px}}
+  .pane .field{display:block;margin:10px 0 4px;font-size:10px;letter-spacing:2px;color:var(--lcd-dim)}
+  .pane .bookbtn{display:inline-block;margin-top:18px;font-size:11px;letter-spacing:2px;
+    color:#0b0d0c;background:var(--lcd-text);padding:11px 18px;border-radius:7px;
+    text-decoration:none;font-weight:600;box-shadow:0 0 14px rgba(127,255,166,.3)}
+
+  /* bottom footer bar */
+  .footbar{
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    margin-top:4px;padding:13px 16px;border-radius:12px;
+    background:linear-gradient(180deg,var(--ps-grey-lo),#8c8c84);
+    box-shadow:0 2px 1px var(--bevel-hi) inset,0 -3px 6px var(--bevel-lo) inset;
+    font-size:9.5px;letter-spacing:2px;color:var(--label);text-transform:uppercase;
+  }
+  .footbar .gl{display:inline-flex;align-items:center;gap:8px}
+  .footbar .live{width:7px;height:7px;border-radius:50%;background:#2fbf4f;box-shadow:0 0 8px #2fbf4f;
+    animation:flick 3s infinite steps(1)}
+  .footbar nav{display:flex;gap:16px;flex-wrap:wrap}
+  .footbar a{color:var(--label);text-decoration:none;transition:color .12s}
+  .footbar a:hover{color:var(--ink)}
+
+  .hidden{display:none !important}
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width:880px){
+    body{padding:14px 10px;align-items:flex-start}
+    .machine{padding:14px;border-radius:20px}
+    .deck{grid-template-columns:1fr;gap:14px}
+    .logo{font-size:40px}
+    .control{gap:14px}
+    .controls-row{justify-content:space-between}
+    .knobs{gap:10px}
+    .pads{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:480px){
+    .logo{font-size:34px}
+    .jog{width:84px;height:84px}
+    .jog .nub{transform:translate(-50%,-50%) translateY(-26px)}
+    .knob{width:50px;height:50px}
+    .knob .tick{transform-origin:50% 19px}
+    .pads{grid-template-columns:1fr}
+    .pad{min-height:auto}
+    .nav{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+  <main class="machine">
+    <div class="deck">
+
+      <!-- ===== LEFT CONTROL SECTION ===== -->
+      <section class="control panel" aria-label="Control section">
+        <div class="brand">
+          <img class="logo-img" src="assets/logo-ink.png" alt="YoO Q" />
+          <div class="tagline">Tour DJ / Live Sets / Stage Sound<br>Global Bass Culture</div>
+        </div>
+
+        <div class="lcd" aria-hidden="true">
+          <span class="led"></span>
+          <div class="lcd-line" id="lcd1">SYSTEM ONLINE</div>
+          <div class="lcd-line" id="lcd2">YOO Q . GLOBAL TOUR</div>
+          <div class="lcd-line dim" id="lcd3">READY TO PLAY <span class="caret"></span></div>
+        </div>
+
+        <nav class="nav" aria-label="Primary">
+          <button class="btn active full" data-sec="tour"><span>TOUR</span><span class="dot"></span></button>
+          <button class="btn" data-sec="music"><span>MUSIC</span><span class="dot"></span></button>
+          <button class="btn" data-sec="visuals"><span>VISUALS</span><span class="dot"></span></button>
+          <button class="btn" data-sec="press"><span>PRESS</span><span class="dot"></span></button>
+          <button class="btn" data-sec="contact"><span>CONTACT</span><span class="dot"></span></button>
+        </nav>
+
+        <div class="controls-row">
+          <div class="jog" id="jog" title="Jog"><span class="nub"></span></div>
+          <div class="transport">
+            <div style="display:flex;align-items:center;gap:10px">
+              <button class="tbtn rec" aria-label="Record"><span class="ico"></span></button>
+              <span class="tlabel">REC</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <button class="tbtn play" aria-label="Play"><span class="ico"></span></button>
+              <span class="tlabel">PLAY</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vol">
+          <div class="vlabel">MASTER VOLUME</div>
+          <div class="slider"><div class="ticks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="knob" id="volknob"></div></div>
+        </div>
+
+        <div class="socials">
+          <a class="chip" href="https://www.instagram.com/itsyooq/" target="_blank" rel="noopener">Instagram</a>
+          <a class="chip" href="https://soundcloud.com/yooqthegawd" target="_blank" rel="noopener">SoundCloud</a>
+          <a class="chip" href="#" data-sec="contact">Contact</a>
+        </div>
+      </section>
+
+      <!-- ===== RIGHT MAIN PANEL ===== -->
+      <section class="main" aria-label="Main panel">
+
+        <div class="knobs">
+          <div class="knob-cell"><div class="knob" data-knob><span class="tick"></span></div><span class="knob-label">BASS</span><span class="knob-dot"></span></div>
+          <div class="knob-cell"><div class="knob" data-knob><span class="tick"></span></div><span class="knob-label">DRIVE</span><span class="knob-dot"></span></div>
+          <div class="knob-cell"><div class="knob" data-knob><span class="tick"></span></div><span class="knob-label">SPACE</span><span class="knob-dot"></span></div>
+          <div class="knob-cell"><div class="knob" data-knob><span class="tick"></span></div><span class="knob-label">OUTPUT</span><span class="knob-dot"></span></div>
+        </div>
+
+        <div class="secbar" id="secbar">
+          <span class="blip"><span class="sq"></span> UPCOMING TOUR DATES</span>
+          <span id="seccount"></span>
+        </div>
+
+        <!-- TOUR (pads) -->
+        <div id="sec-tour" class="pads"></div>
+
+        <!-- MUSIC -->
+        <div id="sec-music" class="pane hidden">
+          <h2>// MUSIC</h2>
+          <p>Latest sets, edits and live recordings live on SoundCloud. Full archive below. Spotify and Apple Music links drop in when the catalog goes up.</p>
+          <iframe height="300" scrolling="no" allow="autoplay" loading="lazy"
+            src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/yooqthegawd&color=%237fffa6&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=true"></iframe>
+          <p style="margin-top:16px"><a href="https://soundcloud.com/yooqthegawd" target="_blank" rel="noopener">OPEN FULL SOUNDCLOUD →</a></p>
+        </div>
+
+        <!-- VISUALS -->
+        <div id="sec-visuals" class="pane hidden">
+          <h2>// VISUALS</h2>
+          <p>Stage footage and tour photography. Live from the road, 2026.</p>
+          <div class="vgrid">
+            <a class="vtile" href="assets/live-red.jpeg" target="_blank" rel="noopener">
+              <img src="assets/live-red.jpeg" alt="YoO Q live, red stage" loading="lazy" />
+              <span class="vcap">LIVE / RED ROOM</span>
+            </a>
+            <a class="vtile" href="assets/live-day.jpeg" target="_blank" rel="noopener">
+              <img src="assets/live-day.jpeg" alt="YoO Q festival set" loading="lazy" />
+              <span class="vcap">FESTIVAL / MAIN STAGE</span>
+            </a>
+            <div class="vtile placeholder"><span class="vcap">REEL 01 — TBD</span></div>
+            <div class="vtile placeholder"><span class="vcap">REEL 02 — TBD</span></div>
+          </div>
+        </div>
+
+        <!-- PRESS / BIO -->
+        <div id="sec-press" class="pane hidden">
+          <h2>// PRESS</h2>
+          <div class="presswrap">
+            <img class="pressimg" src="assets/live-day.jpeg" alt="YoO Q" loading="lazy" />
+            <div>
+              <p>YoO Q is a touring DJ, producer, and live sound selector moving between rap, club, and global bass culture. Built for stages, afterparties, and rooms that need pressure.</p>
+              <p style="margin-top:16px">Currently on the road across Europe and North America. Booking, press, and assets on request via the contact panel.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTACT -->
+        <div id="sec-contact" class="pane hidden">
+          <h2>// CONTACT / BOOKING</h2>
+          <p>For bookings, press, and rates, reach out directly. Replace the address below with the official booking inbox.</p>
+          <span class="field">BOOKING</span>
+          <p><a href="mailto:YooQTheDj@gmail.com?subject=Booking%20Inquiry%20-%20YoO%20Q">YooQTheDj@gmail.com</a></p>
+          <span class="field">SOCIAL</span>
+          <p><a href="https://www.instagram.com/itsyooq/" target="_blank" rel="noopener">instagram.com/itsyooq</a> · <a href="https://soundcloud.com/yooqthegawd" target="_blank" rel="noopener">soundcloud.com/yooqthegawd</a></p>
+          <a class="bookbtn" href="mailto:YooQTheDj@gmail.com?subject=Booking%20Inquiry%20-%20YoO%20Q">SEND BOOKING REQUEST →</a>
+        </div>
+
+        <div class="footbar">
+          <span class="gl"><span class="live"></span> WORLDWIDE DATES // 2026</span>
+          <nav>
+            <a href="https://www.instagram.com/itsyooq/" target="_blank" rel="noopener">INSTAGRAM</a>
+            <a href="https://soundcloud.com/yooqthegawd" target="_blank" rel="noopener">SOUNDCLOUD</a>
+            <a href="#" data-sec="contact">SPOTIFY</a>
+            <a href="#" data-sec="contact">CONTACT</a>
+          </nav>
+        </div>
+      </section>
+    </div>
+  </main>
+
+<script>
+  /* ===== TOUR DATA (verified against letgodsortemout.com/pages/tour) ===== */
+  const tourDates = [
+    { date:"MAY 29",  city:"Stockholm, SE", venue:"3Arena", ticketUrl:"https://www.axs.com/se/events/1006318/linkin-park-tickets?skin=3arena" },
+    { date:"JUN 01",  city:"Hamburg, DE", venue:"Volksparkstadion", ticketUrl:"https://www.ticketmaster.de/event/linkin-park-from-zero-world-tour-2026-tickets/1639015835" },
+    { date:"JUN 03",  city:"Hamburg, DE", venue:"Volksparkstadion", ticketUrl:"https://www.ticketmaster.de/event/linkin-park-from-zero-world-tour-2026-tickets/1524596374" },
+    { date:"JUN 07",  city:"New York, NY", venue:"Governor's Ball 2026", ticketUrl:"https://www.governorsballmusicfestival.com/tickets" },
+    { date:"JUN 09",  city:"Vienna, AT", venue:"Ernst Happel Stadion", ticketUrl:"https://www.ticketmaster.ch/artist/linkin-park-tickets/10021?venueId=1069" },
+    { date:"JUN 11",  city:"Munich, DE", venue:"Allianz Arena", ticketUrl:"https://www.ticketmaster.de/event/linkin-park-from-zero-world-tour-2026-tickets/135395951" },
+    { date:"JUN 12",  city:"Munich, DE", venue:"Allianz Arena", ticketUrl:"https://www.ticketmaster.de/event/linkin-park-from-zero-world-tour-2026-tickets/1417769609" },
+    { date:"JUN 14",  city:"Manchester, TN", venue:"Bonnaroo 2026", ticketUrl:"https://www.bonnaroo.com/tickets" },
+    { date:"JUN 23",  city:"Madrid, ES", venue:"Auditorio Miguel Ríos", ticketUrl:"https://www.ticketmaster.es/artist/linkin-park-entradas/10021" },
+    { date:"JUN 24",  city:"Madrid, ES", venue:"Auditorio Miguel Ríos", ticketUrl:"https://www.ticketmaster.es/artist/linkin-park-entradas/10021" },
+    { date:"JUN 26",  city:"Florence, IT", venue:"Visarno Arena", ticketUrl:"https://shop.ticketmaster.it/biglietti/linkin-park-from-zero-world-tour-2026-26-giugno-2026-visarno-arena-firenze-13714.html" },
+    { date:"JUN 28",  city:"Rotselaar, BE", venue:"Parklife Werchter", ticketUrl:"https://www.werchterparklife.be/en/" },
+    { date:"JUN 30",  city:"Zürich, CH", venue:"Stadion Letzigrund", ticketUrl:"https://www.ticketmaster.ch/event/linkin-park-from-zero-world-tour-2026-tickets/1230682186" },
+    { date:"JUL 02",  city:"Gdynia, PL", venue:"Open'er Festival", ticketUrl:"https://opener.pl/en/tickets" },
+    { date:"JUL 04",  city:"Roskilde, DK", venue:"Roskilde Festival", ticketUrl:"https://roskil.de/tickets" },
+    { date:"JUL 30",  city:"Chicago, IL", venue:"Lollapalooza 2026", ticketUrl:"https://www.lollapalooza.com/tickets" },
+    { date:"AUG 02",  city:"Montreal, CA", venue:"OSHEAGA 2026", ticketUrl:"https://osheaga.com/en/tickets" },
+    { date:"AUG 07",  city:"San Francisco, CA", venue:"Outside Lands", ticketUrl:"https://outsidelands.frontgatetickets.com/" },
+    { date:"AUG 13",  city:"Gothenburg, SE", venue:"Way Out West", ticketUrl:"https://www.wayoutwest.se/tickets/" },
+    { date:"AUG 14",  city:"Oslo, NO", venue:"Øya Festival", ticketUrl:"https://oyafestivalen.seetickets.com/event/oyafestivalen-2026/t-yenparken/3458167" },
+    { date:"AUG 15",  city:"Helsinki, FI", venue:"Flow Festival 2026", ticketUrl:"https://www.flowfestival.com/liput/" },
+    { date:"AUG 23",  city:"Biddinghuizen, NL", venue:"Lowlands Festival", ticketUrl:"https://lowlands.nl/tickets/" },
+    { date:"AUG 26",  city:"Milan, IT", venue:"Circolo Magnolia", ticketUrl:"https://www.ticketone.it/artist/clipse-pushat-malice/?affiliate=VIC" },
+    { date:"AUG 28",  city:"London, UK", venue:"All Points East 2026", ticketUrl:"https://www.allpointseastfestival.com/" },
+    { date:"AUG 30",  city:"Lisbon, PT", venue:"MEO Kalorama", ticketUrl:"https://meokalorama.pt/tickets/" }
+  ];
+
+  /* trigger-light colors cycle like a sampler */
+  const STRIP = ["#8a5cf6","#d24bd2","#ff5aa0","#ff5a4d","#ff8a3d","#ffd23d","#a6e63d","#3dd96b","#3dd9c4","#3d9bff","#5c6cf6","#9b5cf6"];
+
+  const grid = document.getElementById('sec-tour');
+  tourDates.forEach((d,i)=>{
+    const a=document.createElement('a');
+    a.className='pad';
+    a.href=d.ticketUrl; a.target='_blank'; a.rel='noopener';
+    a.style.setProperty('--c', STRIP[i % STRIP.length]);
+    a.innerHTML =
+      '<span class="strip"></span>'+
+      '<span class="num">'+String(i+1).padStart(2,'0')+'</span>'+
+      '<span class="date">'+d.date+'</span>'+
+      '<span class="city">'+d.city+'</span>'+
+      '<span class="venue">'+d.venue+'</span>'+
+      '<span class="go">TICKETS <span class="arr">→</span></span>';
+    grid.appendChild(a);
+  });
+  document.getElementById('seccount').textContent = tourDates.length+' DATES';
+
+  /* ===== SECTION SWITCHING ===== */
+  const sections = ['tour','music','visuals','press','contact'];
+  const lcdMap = {
+    tour:    ['SYSTEM ONLINE','YOO Q . GLOBAL TOUR','READY TO PLAY'],
+    music:   ['AUDIO ENGINE','YOO Q . SELECTED SETS','NOW STREAMING'],
+    visuals: ['VIDEO BUFFER','YOO Q . STAGE FOOTAGE','FRAMES LOADED'],
+    press:   ['BIO MODULE','YOO Q . PROFILE','READ ONLY'],
+    contact: ['COMMS LINK','YOO Q . BOOKING','AWAITING INPUT']
+  };
+  const secTitle = {
+    tour:'UPCOMING TOUR DATES', music:'AUDIO / SETS', visuals:'VISUAL ARCHIVE',
+    press:'PRESS / BIO', contact:'CONTACT / BOOKING'
+  };
+  function show(sec){
+    sections.forEach(s=>{
+      const el=document.getElementById('sec-'+s);
+      if(el) el.classList.toggle('hidden', s!==sec);
+    });
+    document.querySelectorAll('.nav .btn').forEach(b=>b.classList.toggle('active', b.dataset.sec===sec));
+    const [l1,l2,l3]=lcdMap[sec];
+    document.getElementById('lcd1').textContent=l1;
+    document.getElementById('lcd2').textContent=l2;
+    document.getElementById('lcd3').innerHTML=l3+' <span class="caret"></span>';
+    document.querySelector('#secbar .blip').innerHTML='<span class="sq"></span> '+secTitle[sec];
+    document.getElementById('seccount').textContent = sec==='tour' ? tourDates.length+' DATES' : '';
+  }
+  document.querySelectorAll('[data-sec]').forEach(el=>{
+    el.addEventListener('click', e=>{
+      if(el.tagName==='A') e.preventDefault();
+      show(el.dataset.sec);
+    });
+  });
+
+  /* ===== KNOB + JOG ROTATION ON MOUSE/SCROLL ===== */
+  const knobTicks=[...document.querySelectorAll('.knob[data-knob] .tick')];
+  let kr=[ -120,-60,30,90 ];
+  function setKnobs(){ knobTicks.forEach((t,i)=>t.style.transform='translateX(-50%) rotate('+kr[i]+'deg)'); }
+  setKnobs();
+  window.addEventListener('mousemove', e=>{
+    const x=(e.clientX/window.innerWidth-0.5);
+    knobTicks.forEach((t,i)=>{ t.style.transform='translateX(-50%) rotate('+(kr[i]+x*22)+'deg)'; });
+  });
+  const jog=document.getElementById('jog');
+  let jogR=0;
+  window.addEventListener('scroll', ()=>{ jogR=window.scrollY*0.4; jog.style.transform='rotate('+jogR+'deg)'; }, {passive:true});
+
+  /* tactile press feedback on transport buttons */
+  document.querySelectorAll('.tbtn').forEach(b=>{
+    b.addEventListener('click',()=>{ b.animate([{transform:'translateY(2px)'},{transform:'translateY(0)'}],{duration:120,easing:'ease-out'}); });
+  });
+</script>
+</body>
+</html>

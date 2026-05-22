@@ -965,11 +965,14 @@
 
   function playSound(reveal=false){
     if(reveal) show('music');
-    queuedPlay=true;
     initSoundCloud();
-    if(soundcloudWidget && soundcloudReady) {
-      soundcloudWidget.play();
-      queuedPlay=false;
+    if(soundcloudWidget){
+      // fire play() directly inside the user gesture; the widget queues it until ready.
+      // mobile browsers block play() if it's fired later from the READY callback (not a gesture).
+      try{ soundcloudWidget.play(); }catch(_){}
+      queuedPlay=true; // fallback: if the widget wasn't ready, READY will replay
+    } else {
+      queuedPlay=true;
     }
     setPlaying(true);
   }
@@ -1111,6 +1114,26 @@
   volumeSlider.addEventListener('pointerup', endVolume);
   document.addEventListener('pointerup', endVolume);
   document.addEventListener('pointercancel', endVolume);
+
+  // explicit touch handlers — mobile browsers don't reliably deliver pointermove to a thin custom slider
+  function volumeFromTouch(t){
+    const rect=volumeSlider.getBoundingClientRect();
+    return ((t.clientX-rect.left)/rect.width)*100;
+  }
+  volumeSlider.addEventListener('touchstart', e=>{
+    if(!e.touches.length) return;
+    e.preventDefault();
+    volumeDragging=true;
+    volumeKnob.classList.add('is-dragging');
+    setMasterVolume(volumeFromTouch(e.touches[0]), true, true);
+  }, {passive:false});
+  volumeSlider.addEventListener('touchmove', e=>{
+    if(!volumeDragging || !e.touches.length) return;
+    e.preventDefault();
+    setMasterVolume(volumeFromTouch(e.touches[0]), true, true);
+  }, {passive:false});
+  volumeSlider.addEventListener('touchend', ()=>finishVolumeDrag(), {passive:false});
+  volumeSlider.addEventListener('touchcancel', ()=>finishVolumeDrag(), {passive:false});
 
   const jog=document.getElementById('jog');
   let jogR=0;

@@ -273,13 +273,17 @@
     position:relative;height:14px;border-radius:8px;
     background:linear-gradient(180deg,#6f706a,#83847d);
     box-shadow:0 2px 4px rgba(0,0,0,.4) inset,0 1px 0 rgba(255,255,255,.25);
+    touch-action:none;
+  }
+  .slider::before{
+    content:"";position:absolute;left:0;right:0;top:-14px;bottom:-14px;
   }
   .slider .ticks{position:absolute;inset:0;display:flex;justify-content:space-between;
     align-items:center;padding:0 10px;pointer-events:none}
   .slider .ticks i{width:2px;height:2px;border-radius:50%;background:rgba(40,41,36,.5)}
   .slider .knob{
     position:absolute;top:50%;left:calc(var(--output) * 1%);transform:translate(-50%,-50%);
-    width:24px;height:24px;border-radius:7px;cursor:grab;
+    width:24px;height:24px;border-radius:7px;cursor:grab;z-index:2;
     background:linear-gradient(180deg,var(--ps-grey-hi),var(--plastic-dark));
     box-shadow:0 1px 0 var(--bevel-hi) inset,0 -2px 4px var(--bevel-lo) inset,0 3px 6px rgba(0,0,0,.4);
   }
@@ -521,6 +525,9 @@
     .tagline{margin-top:0;font-size:8px;letter-spacing:2px;line-height:1.45}
     .control{gap:12px}
     .controls-row{justify-content:space-between}
+    .slider{height:18px;border-radius:10px}
+    .slider::before{top:-18px;bottom:-18px}
+    .slider .knob{width:32px;height:32px;border-radius:9px}
     .main{gap:12px}
     .secbar{order:1}
     #sec-tour,.pane{order:2}
@@ -1001,25 +1008,34 @@
 
   const volumeSlider=document.getElementById('volumeSlider');
   const volumeKnob=document.getElementById('volknob');
+  let volumeDragging=false;
   function volumeFromPointer(e){
     const rect=volumeSlider.getBoundingClientRect();
     return ((e.clientX-rect.left)/rect.width)*100;
   }
+  function updateVolumeFromEvent(e){
+    setMasterVolume(volumeFromPointer(e), true, true);
+  }
+  function finishVolumeDrag(){
+    if(!volumeDragging) return;
+    volumeDragging=false;
+    volumeKnob.classList.remove('is-dragging');
+    document.getElementById('lcd3').innerHTML='VOLUME SET <span class="caret"></span>';
+  }
   volumeSlider.addEventListener('pointerdown', e=>{
     e.preventDefault();
+    volumeDragging=true;
     volumeKnob.classList.add('is-dragging');
-    volumeSlider.setPointerCapture(e.pointerId);
-    setMasterVolume(volumeFromPointer(e), true, true);
+    if(volumeSlider.setPointerCapture) volumeSlider.setPointerCapture(e.pointerId);
+    updateVolumeFromEvent(e);
   });
-  volumeSlider.addEventListener('pointermove', e=>{
-    if(!volumeKnob.classList.contains('is-dragging')) return;
-    setMasterVolume(volumeFromPointer(e), true, true);
-  });
-  volumeSlider.addEventListener('pointerup', e=>{
-    volumeKnob.classList.remove('is-dragging');
-    volumeSlider.releasePointerCapture(e.pointerId);
-    document.getElementById('lcd3').innerHTML='VOLUME SET <span class="caret"></span>';
-  });
+  document.addEventListener('pointermove', e=>{
+    if(!volumeDragging) return;
+    e.preventDefault();
+    updateVolumeFromEvent(e);
+  }, {passive:false});
+  document.addEventListener('pointerup', finishVolumeDrag);
+  document.addEventListener('pointercancel', finishVolumeDrag);
 
   const jog=document.getElementById('jog');
   let jogR=0;

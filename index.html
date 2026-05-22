@@ -278,11 +278,12 @@
     align-items:center;padding:0 10px;pointer-events:none}
   .slider .ticks i{width:2px;height:2px;border-radius:50%;background:rgba(40,41,36,.5)}
   .slider .knob{
-    position:absolute;top:50%;left:62%;transform:translate(-50%,-50%);
+    position:absolute;top:50%;left:calc(var(--output) * 1%);transform:translate(-50%,-50%);
     width:24px;height:24px;border-radius:7px;cursor:grab;
     background:linear-gradient(180deg,var(--ps-grey-hi),var(--plastic-dark));
     box-shadow:0 1px 0 var(--bevel-hi) inset,0 -2px 4px var(--bevel-lo) inset,0 3px 6px rgba(0,0,0,.4);
   }
+  .slider .knob.is-dragging{filter:brightness(1.12)}
   .slider::after{
     content:"";position:absolute;left:0;top:0;bottom:0;width:calc(var(--output) * 1%);
     border-radius:8px;background:linear-gradient(90deg,rgba(127,255,166,.18),rgba(127,255,166,.44));
@@ -433,6 +434,20 @@
   }
 
   /* visuals gallery */
+  .video-module{
+    position:relative;z-index:2;margin:14px 0 16px;border-radius:12px;overflow:hidden;
+    border:1px solid rgba(127,255,166,.18);background:#050705;
+    box-shadow:0 0 24px rgba(127,255,166,.08),0 12px 28px rgba(0,0,0,.35);
+  }
+  .video-module iframe{
+    display:block;width:100%;aspect-ratio:16/9;height:auto;margin:0;border:0;
+    filter:saturate(1.05) contrast(1.04);
+  }
+  .video-label{
+    position:absolute;left:12px;bottom:12px;z-index:2;
+    font-size:9px;letter-spacing:2px;color:#cfe8c4;text-transform:uppercase;
+    background:rgba(7,9,7,.72);padding:6px 8px;border-radius:5px;
+  }
   .vgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:6px;position:relative;z-index:2}
   .vtile{position:relative;aspect-ratio:4/5;border-radius:10px;overflow:hidden;display:block;
     border:1px solid rgba(127,255,166,.18);background:#0c110b;text-decoration:none}
@@ -543,7 +558,7 @@
 
         <div class="vol">
           <div class="vlabel">MASTER VOLUME</div>
-          <div class="slider"><div class="ticks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="knob" id="volknob"></div></div>
+          <div class="slider" id="volumeSlider" role="slider" aria-label="Master volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="72"><div class="ticks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="knob" id="volknob"></div></div>
         </div>
 
         <div class="socials">
@@ -595,7 +610,11 @@
         <!-- VISUALS -->
         <div id="sec-visuals" class="pane hidden">
           <h2>// VISUALS</h2>
-          <p>Stage footage and tour photography. Live from the road, 2026.</p>
+          <p>Stage footage, tour photography, and test video embeds. Live from the road, 2026.</p>
+          <div class="video-module">
+            <iframe src="https://www.youtube-nocookie.com/embed/hizxWN9NS08?start=53&rel=0&modestbranding=1&playsinline=1" title="YoO Q test video embed" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            <span class="video-label">TEST VIDEO / START 00:53</span>
+          </div>
           <div class="vgrid">
             <a class="vtile" href="assets/live-red.jpeg" target="_blank" rel="noopener">
               <img src="assets/live-red.jpeg" alt="YoO Q live, red stage" loading="lazy" />
@@ -847,6 +866,21 @@
     knob.setAttribute('aria-valuenow', clamped);
     const valueEl=document.getElementById(name+'Val');
     if(valueEl) valueEl.textContent=String(clamped).padStart(2,'0');
+    if(name==='output') setMasterVolume(clamped, false);
+  }
+  function setMasterVolume(value, syncOutput=true, updateLCD=false){
+    const clamped=Math.max(0,Math.min(100,Math.round(value)));
+    document.documentElement.style.setProperty('--output', clamped);
+    const slider=document.getElementById('volumeSlider');
+    if(slider) slider.setAttribute('aria-valuenow', clamped);
+    if(syncOutput && knobState.output!==clamped) setKnob('output', clamped);
+    if(soundcloudWidget && soundcloudWidget.setVolume) soundcloudWidget.setVolume(clamped);
+    const l1=document.getElementById('lcd1');
+    const l2=document.getElementById('lcd2');
+    if(updateLCD && l1 && l2){
+      l1.textContent='MASTER OUT';
+      l2.textContent='VOLUME '+String(clamped).padStart(2,'0');
+    }
   }
   function applyKnobs(){
     Object.entries(knobState).forEach(([name,value])=>setKnob(name,value));
@@ -856,7 +890,7 @@
       el.style.boxShadow =
         '0 0 0 2px rgba(255,255,255,.16), 0 6px 14px rgba(0,0,0,.45) inset, 0 0 '+(knobState.space/3)+'px rgba(127,255,166,.16)';
     });
-    if(soundcloudWidget && soundcloudWidget.setVolume) soundcloudWidget.setVolume(knobState.output);
+    setMasterVolume(knobState.output, false);
   }
   applyKnobs();
   document.querySelectorAll('.knob[data-knob]').forEach(knob=>{
@@ -881,6 +915,28 @@
       document.getElementById('lcd2').textContent=name.toUpperCase()+' '+String(knobState[name]).padStart(2,'0');
       document.getElementById('lcd3').innerHTML='PARAMETER SAVED <span class="caret"></span>';
     });
+  });
+
+  const volumeSlider=document.getElementById('volumeSlider');
+  const volumeKnob=document.getElementById('volknob');
+  function volumeFromPointer(e){
+    const rect=volumeSlider.getBoundingClientRect();
+    return ((e.clientX-rect.left)/rect.width)*100;
+  }
+  volumeSlider.addEventListener('pointerdown', e=>{
+    e.preventDefault();
+    volumeKnob.classList.add('is-dragging');
+    volumeSlider.setPointerCapture(e.pointerId);
+    setMasterVolume(volumeFromPointer(e), true, true);
+  });
+  volumeSlider.addEventListener('pointermove', e=>{
+    if(!volumeKnob.classList.contains('is-dragging')) return;
+    setMasterVolume(volumeFromPointer(e), true, true);
+  });
+  volumeSlider.addEventListener('pointerup', e=>{
+    volumeKnob.classList.remove('is-dragging');
+    volumeSlider.releasePointerCapture(e.pointerId);
+    document.getElementById('lcd3').innerHTML='VOLUME SET <span class="caret"></span>';
   });
 
   const jog=document.getElementById('jog');

@@ -101,6 +101,30 @@
   }
   .cursor.is-hover::after{opacity:0}
   @media (pointer:coarse){.cursor{display:none}}
+  .touch-burst{
+    position:fixed;left:0;top:0;z-index:9998;pointer-events:none;
+    width:18px;height:18px;border-radius:50%;
+    border:1px solid rgba(207,232,196,.92);
+    background:radial-gradient(circle,rgba(127,255,166,.34),rgba(127,255,166,.08) 45%,transparent 70%);
+    box-shadow:0 0 18px rgba(127,255,166,.42);
+    transform:translate(-50%,-50%) scale(.7);
+    animation:touchBurst .48s ease-out forwards;
+  }
+  @keyframes touchBurst{
+    to{opacity:0;transform:translate(-50%,-50%) scale(4.8)}
+  }
+  .touch-flash{
+    position:relative;
+  }
+  .touch-flash::after{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;
+    box-shadow:0 0 0 1px rgba(127,255,166,.28),0 0 24px rgba(127,255,166,.28);
+    opacity:0;animation:surfaceFlash .34s ease-out;
+  }
+  @keyframes surfaceFlash{
+    0%{opacity:1}
+    100%{opacity:0}
+  }
 
   /* ===== HARDWARE BODY ===== */
   .machine{
@@ -852,6 +876,41 @@
   document.addEventListener('pointerout', e=>{
     if(e.target.closest('a,button,.knob,.jog,.slider .knob,iframe')) cursor.classList.remove('is-hover');
   });
+
+  /* ===== MOBILE TOUCH FEEDBACK ===== */
+  function flashSurface(el){
+    if(!el) return;
+    el.classList.remove('touch-flash');
+    void el.offsetWidth;
+    el.classList.add('touch-flash');
+    window.setTimeout(()=>el.classList.remove('touch-flash'), 380);
+  }
+  function touchMessage(target){
+    if(target.closest('.pad')) return 'PAD TRIGGERED';
+    if(target.closest('.bank-btn')) return 'BANK SELECT';
+    if(target.closest('.nav .btn')) return 'MODE SWITCH';
+    if(target.closest('.tbtn')) return 'TRANSPORT HIT';
+    if(target.closest('.slider')) return 'LEVEL TOUCH';
+    if(target.closest('.knob')) return 'PARAMETER TOUCH';
+    return 'TOUCH INPUT';
+  }
+  document.addEventListener('pointerdown', e=>{
+    const target = e.target.closest('a,button,.pad,.bank-btn,.knob,.jog,.slider,.chip');
+    if(!target) return;
+    const burst=document.createElement('span');
+    burst.className='touch-burst';
+    burst.style.left=e.clientX+'px';
+    burst.style.top=e.clientY+'px';
+    document.body.appendChild(burst);
+    burst.addEventListener('animationend',()=>burst.remove(),{once:true});
+    flashSurface(target);
+    if(e.pointerType === 'touch'){
+      document.getElementById('lcd1').textContent=touchMessage(target);
+    }
+    if(navigator.vibrate && e.pointerType === 'touch'){
+      navigator.vibrate(8);
+    }
+  }, {passive:true});
 
   /* ===== SOUNDCLOUD TRANSPORT ===== */
   const playerFrame=document.getElementById('soundcloudPlayer');

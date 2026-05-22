@@ -587,7 +587,7 @@
             <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
           </div>
           <p>Latest sets, edits and live recordings live on SoundCloud. Use the transport buttons or the embedded player below.</p>
-          <iframe id="soundcloudPlayer" height="300" scrolling="no" allow="autoplay" loading="lazy"
+          <iframe id="soundcloudPlayer" height="300" scrolling="no" allow="autoplay" loading="eager"
             src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/yooqthegawd&color=%237fffa6&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=true"></iframe>
           <p style="margin-top:16px"><a href="https://soundcloud.com/yooqthegawd" target="_blank" rel="noopener">OPEN FULL SOUNDCLOUD →</a></p>
         </div>
@@ -749,6 +749,9 @@
   const playerFrame=document.getElementById('soundcloudPlayer');
   const playerState=document.getElementById('playerState');
   let soundcloudWidget=null;
+  let soundcloudReady=false;
+  let queuedPlay=false;
+  let queuedNext=false;
   let isPlaying=false;
   function setPlaying(on){
     isPlaying=on;
@@ -756,44 +759,70 @@
     document.querySelector('.play').classList.toggle('is-on', on);
     if(playerState) playerState.textContent = on ? 'Playing SoundCloud' : 'Player ready';
     const l3=document.getElementById('lcd3');
-    if(l3 && !document.getElementById('sec-music').classList.contains('hidden')){
+    if(on){
+      document.getElementById('lcd1').textContent='AUDIO ENGINE';
+      document.getElementById('lcd2').textContent='YOO Q . SELECTED SETS';
+    }
+    if(l3){
       l3.innerHTML=(on ? 'SIGNAL HOT' : 'READY TO PLAY')+' <span class="caret"></span>';
     }
   }
   function initSoundCloud(){
-    if(soundcloudWidget || !window.SC || !playerFrame) return;
+    if(soundcloudWidget || !playerFrame) return soundcloudWidget;
+    if(!window.SC){
+      if(queuedPlay || queuedNext) setTimeout(initSoundCloud, 250);
+      return null;
+    }
     soundcloudWidget=SC.Widget(playerFrame);
     soundcloudWidget.bind(SC.Widget.Events.READY, ()=>{
+      soundcloudReady=true;
       applyKnobs();
       if(playerState) playerState.textContent='SoundCloud connected';
+      if(queuedNext && soundcloudWidget.next) soundcloudWidget.next();
+      if(queuedPlay) soundcloudWidget.play();
+      queuedPlay=false;
+      queuedNext=false;
     });
     soundcloudWidget.bind(SC.Widget.Events.PLAY, ()=>setPlaying(true));
     soundcloudWidget.bind(SC.Widget.Events.PAUSE, ()=>setPlaying(false));
     soundcloudWidget.bind(SC.Widget.Events.FINISH, ()=>setPlaying(false));
+    return soundcloudWidget;
   }
   window.addEventListener('load', initSoundCloud);
 
-  function playSound(){
-    show('music');
+  function playSound(reveal=false){
+    if(reveal) show('music');
+    queuedPlay=true;
     initSoundCloud();
-    if(soundcloudWidget) soundcloudWidget.play();
+    if(soundcloudWidget && soundcloudReady) {
+      soundcloudWidget.play();
+      queuedPlay=false;
+    }
     setPlaying(true);
   }
   function pauseSound(){
+    queuedPlay=false;
     if(soundcloudWidget) soundcloudWidget.pause();
     setPlaying(false);
   }
-  function nextSound(){
-    show('music');
+  function nextSound(reveal=false){
+    if(reveal) show('music');
+    queuedNext=true;
+    queuedPlay=true;
     initSoundCloud();
-    if(soundcloudWidget && soundcloudWidget.next) soundcloudWidget.next();
+    if(soundcloudWidget && soundcloudReady && soundcloudWidget.next) {
+      soundcloudWidget.next();
+      soundcloudWidget.play();
+      queuedNext=false;
+      queuedPlay=false;
+    }
     setPlaying(true);
   }
   document.querySelector('.play').addEventListener('click',()=> isPlaying ? pauseSound() : playSound());
-  document.getElementById('miniPlay').addEventListener('click', playSound);
+  document.getElementById('miniPlay').addEventListener('click', ()=>playSound(true));
   document.getElementById('miniPause').addEventListener('click', pauseSound);
-  document.getElementById('miniNext').addEventListener('click', nextSound);
-  document.querySelector('.rec').addEventListener('click', nextSound);
+  document.getElementById('miniNext').addEventListener('click', ()=>nextSound(true));
+  document.querySelector('.rec').addEventListener('click', ()=>nextSound());
 
   /* ===== FUNCTIONAL KNOBS ===== */
   const knobState={bass:58,drive:48,space:64,output:72};

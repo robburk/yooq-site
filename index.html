@@ -684,14 +684,14 @@
             <div class="mini-controls">
               <button type="button" id="miniPlay">Play</button>
               <button type="button" id="miniPause">Pause</button>
-              <button type="button" id="miniNext">Next</button>
+              <button type="button" id="miniNext">SoundCloud</button>
             </div>
           </div>
           <div class="mix-strip" aria-hidden="true">
             <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
             <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
           </div>
-          <p>Latest sets, edits and live recordings live on SoundCloud. Use the transport buttons or the embedded player below.</p>
+          <p>Featured track <strong>Snooze Button (YoO Q Mashup)</strong> runs on the machine: PLAY, master volume and the Bass / Drive / Space knobs all shape it live. Full catalog streams on SoundCloud below.</p>
           <iframe id="soundcloudPlayer" height="300" scrolling="no" allow="autoplay" loading="eager"
             src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/yooqthegawd&color=%237fffa6&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=true"></iframe>
           <p style="margin-top:16px"><a href="https://soundcloud.com/yooqthegawd" target="_blank" rel="noopener">OPEN FULL SOUNDCLOUD →</a></p>
@@ -756,6 +756,9 @@
     </div>
   </main>
   <div class="cursor" id="cursor" aria-hidden="true"></div>
+
+  <!-- self-hosted featured track: same-origin so the machine can really control volume + EQ -->
+  <audio id="localAudio" src="assets/snooze-button-yooq-mashup.mp3" preload="metadata" playsinline></audio>
 
 <script src="https://w.soundcloud.com/player/api.js"></script>
 <script>
@@ -916,89 +919,135 @@
     }
   }, {passive:true});
 
-  /* ===== SOUNDCLOUD TRANSPORT ===== */
+  /* ===== AUDIO ENGINE: self-hosted track (Web Audio) + SoundCloud catalog =====
+     activeSource decides what the machine controls:
+       'local'      -> the featured MP3, processed through Web Audio (real volume + EQ, works on mobile)
+       'soundcloud' -> the embedded catalog player (its own controls; we just sync state + volume)
+     The two never play at once. */
   const playerFrame=document.getElementById('soundcloudPlayer');
   const playerState=document.getElementById('playerState');
+  const localAudio=document.getElementById('localAudio');
   let soundcloudWidget=null;
   let soundcloudReady=false;
   let queuedPlay=false;
   let queuedNext=false;
   let isPlaying=false;
+  let activeSource='local';
+
+  /* ---- Web Audio graph for the local track ---- */
+  let audioCtx=null, srcNode=null, bassNode=null, driveNode=null,
+      dryGain=null, wetGain=null, convolver=null, masterGain=null, audioBuilt=false;
+  function makeDriveCurve(amount){ // amount 0..1
+    const n=2048, curve=new Float32Array(n), k=amount*60;
+    for(let i=0;i<n;i++){ const x=i*2/n-1; curve[i]=(3+k)*x*0.30/(Math.PI+k*Math.abs(x)); }
+    return curve;
+  }
+  function makeImpulse(ctx, seconds, decay){
+    const rate=ctx.sampleRate, len=Math.max(1,Math.floor(rate*seconds));
+    const buf=ctx.createBuffer(2,len,rate);
+    for(let ch=0; ch<2; ch++){ const d=buf.getChannelData(ch);
+      for(let i=0;i<len;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/len, decay); } }
+    return buf;
+  }
+  function ensureAudio(){
+    if(audioBuilt) { if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); return; }
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return; // very old browser: element will still play unprocessed
+    audioCtx=new AC();
+    srcNode=audioCtx.createMediaElementSource(localAudio);
+    bassNode=audioCtx.createBiquadFilter(); bassNode.type='lowshelf'; bassNode.frequency.value=200;
+    driveNode=audioCtx.createWaveShaper(); driveNode.oversample='2x';
+    convolver=audioCtx.createConvolver(); convolver.buffer=makeImpulse(audioCtx,1.8,2.6);
+    dryGain=audioCtx.createGain(); wetGain=audioCtx.createGain();
+    masterGain=audioCtx.createGain();
+    // src -> bass -> drive -> (dry + convolver->wet) -> master -> out
+    srcNode.connect(bassNode); bassNode.connect(driveNode);
+    driveNode.connect(dryGain); driveNode.connect(convolver); convolver.connect(wetGain);
+    dryGain.connect(masterGain); wetGain.connect(masterGain);
+    masterGain.connect(audioCtx.destination);
+    audioBuilt=true;
+    applyAudioParams();
+  }
+  function applyAudioParams(){
+    if(!audioBuilt) return;
+    bassNode.gain.value = (knobState.bass-50)/50*12;        // -12..+12 dB
+    driveNode.curve = makeDriveCurve(knobState.drive/100);  // clean..crunchy
+    wetGain.gain.value = knobState.space/100*0.55;          // room amount
+    dryGain.gain.value = 1;
+    masterGain.gain.value = knobState.output/100;           // real master volume
+  }
+
   function setPlaying(on){
     isPlaying=on;
     document.body.classList.toggle('playing', on);
     document.querySelector('.play').classList.toggle('is-on', on);
-    if(playerState) playerState.textContent = on ? 'Playing SoundCloud' : 'Player ready';
+    if(playerState) playerState.textContent = on
+      ? (activeSource==='local' ? 'Playing featured track' : 'Playing SoundCloud')
+      : 'Player ready';
     const l3=document.getElementById('lcd3');
     if(on){
       document.getElementById('lcd1').textContent='AUDIO ENGINE';
-      document.getElementById('lcd2').textContent='YOO Q . SELECTED SETS';
+      document.getElementById('lcd2').textContent= activeSource==='local' ? 'YOO Q . SNOOZE BUTTON' : 'YOO Q . SELECTED SETS';
     }
-    if(l3){
-      l3.innerHTML=(on ? 'SIGNAL HOT' : 'READY TO PLAY')+' <span class="caret"></span>';
-    }
+    if(l3){ l3.innerHTML=(on ? 'SIGNAL HOT' : 'READY TO PLAY')+' <span class="caret"></span>'; }
   }
+
+  /* ---- SoundCloud (catalog only) ---- */
   function initSoundCloud(){
-    if(soundcloudWidget || !playerFrame) return soundcloudWidget;
-    if(!window.SC){
-      if(queuedPlay || queuedNext) setTimeout(initSoundCloud, 250);
-      return null;
-    }
+    if(soundcloudWidget || !playerFrame || !window.SC) return soundcloudWidget;
     soundcloudWidget=SC.Widget(playerFrame);
     soundcloudWidget.bind(SC.Widget.Events.READY, ()=>{
       soundcloudReady=true;
-      applyKnobs();
-      if(playerState) playerState.textContent='SoundCloud connected';
+      if(soundcloudWidget.setVolume) soundcloudWidget.setVolume(knobState.output);
       if(queuedNext && soundcloudWidget.next) soundcloudWidget.next();
       if(queuedPlay) soundcloudWidget.play();
-      queuedPlay=false;
-      queuedNext=false;
+      queuedPlay=false; queuedNext=false;
     });
-    soundcloudWidget.bind(SC.Widget.Events.PLAY, ()=>setPlaying(true));
+    // user pressing play inside the SoundCloud embed takes over from the local track
+    soundcloudWidget.bind(SC.Widget.Events.PLAY, ()=>{ activeSource='soundcloud'; localAudio.pause(); setPlaying(true); });
     soundcloudWidget.bind(SC.Widget.Events.PAUSE, ()=>setPlaying(false));
     soundcloudWidget.bind(SC.Widget.Events.FINISH, ()=>setPlaying(false));
     return soundcloudWidget;
   }
   window.addEventListener('load', initSoundCloud);
-  // also try as soon as the SC API arrives, so the widget is ready before the first tap
   (function waitForSC(){ if(window.SC){ initSoundCloud(); } else { setTimeout(waitForSC, 200); } })();
 
-  function playSound(reveal=false){
+  /* ---- transport: PLAY/PAUSE follow the active source ---- */
+  localAudio.addEventListener('play', ()=>{ activeSource='local'; if(soundcloudWidget) soundcloudWidget.pause(); setPlaying(true); });
+  localAudio.addEventListener('pause', ()=>{ if(activeSource==='local') setPlaying(false); });
+  localAudio.addEventListener('ended', ()=>{ if(activeSource==='local') setPlaying(false); });
+
+  function playLocal(reveal=false){
     if(reveal) show('music');
-    initSoundCloud();
-    if(soundcloudWidget){
-      // fire play() directly inside the user gesture; the widget queues it until ready.
-      // mobile browsers block play() if it's fired later from the READY callback (not a gesture).
-      try{ soundcloudWidget.play(); }catch(_){}
-      queuedPlay=true; // fallback: if the widget wasn't ready, READY will replay
-    } else {
-      queuedPlay=true;
-    }
-    setPlaying(true);
+    activeSource='local';
+    ensureAudio();          // build/resume the graph inside this user gesture (mobile needs this)
+    applyAudioParams();
+    localAudio.play().catch(()=>{});   // direct play inside the gesture = no double-tap
   }
-  function pauseSound(){
-    queuedPlay=false;
-    if(soundcloudWidget) soundcloudWidget.pause();
+  function pauseActive(){
+    if(activeSource==='soundcloud' && soundcloudWidget) soundcloudWidget.pause();
+    else localAudio.pause();
     setPlaying(false);
   }
-  function nextSound(reveal=false){
-    if(reveal) show('music');
-    queuedNext=true;
-    queuedPlay=true;
-    initSoundCloud();
-    if(soundcloudWidget && soundcloudReady && soundcloudWidget.next) {
-      soundcloudWidget.next();
-      soundcloudWidget.play();
-      queuedNext=false;
-      queuedPlay=false;
-    }
-    setPlaying(true);
+  function togglePlay(){
+    if(isPlaying){ pauseActive(); return; }
+    if(activeSource==='soundcloud' && soundcloudWidget){ soundcloudWidget.play(); }
+    else playLocal();
   }
-  document.querySelector('.play').addEventListener('click',()=> isPlaying ? pauseSound() : playSound());
-  document.getElementById('miniPlay').addEventListener('click', ()=>playSound(true));
-  document.getElementById('miniPause').addEventListener('click', pauseSound);
-  document.getElementById('miniNext').addEventListener('click', ()=>nextSound(true));
-  document.querySelector('.rec').addEventListener('click', ()=>nextSound());
+  function openCatalog(){   // jump to the SoundCloud catalog and start it
+    show('music');
+    activeSource='soundcloud';
+    localAudio.pause();
+    initSoundCloud();
+    queuedPlay=true;
+    if(soundcloudWidget && soundcloudReady){ soundcloudWidget.play(); queuedPlay=false; }
+  }
+
+  document.querySelector('.play').addEventListener('click', togglePlay);
+  document.getElementById('miniPlay').addEventListener('click', ()=>playLocal(true));
+  document.getElementById('miniPause').addEventListener('click', pauseActive);
+  document.getElementById('miniNext').addEventListener('click', openCatalog);
+  document.querySelector('.rec').addEventListener('click', openCatalog);
 
   /* ===== FUNCTIONAL KNOBS ===== */
   const knobState={bass:58,drive:48,space:64,output:72};
@@ -1031,7 +1080,9 @@
     const slider=document.getElementById('volumeSlider');
     if(slider) slider.setAttribute('aria-valuenow', clamped);
     if(syncOutput && knobState.output!==clamped) setKnob('output', clamped);
-    if(soundcloudWidget && soundcloudWidget.setVolume) soundcloudWidget.setVolume(clamped);
+    knobState.output=clamped;
+    if(masterGain) masterGain.gain.value = clamped/100;            // real local volume (works on mobile)
+    if(soundcloudWidget && soundcloudWidget.setVolume) soundcloudWidget.setVolume(clamped); // SC (desktop)
     const l1=document.getElementById('lcd1');
     const l2=document.getElementById('lcd2');
     if(updateLCD && l1 && l2){
@@ -1048,6 +1099,7 @@
         '0 0 0 2px rgba(255,255,255,.16), 0 6px 14px rgba(0,0,0,.45) inset, 0 0 '+(knobState.space/3)+'px rgba(127,255,166,.16)';
     });
     setMasterVolume(knobState.output, false);
+    applyAudioParams();   // push bass/drive/space/master into the live Web Audio graph
   }
   applyKnobs();
   document.querySelectorAll('.knob[data-knob]').forEach(knob=>{
